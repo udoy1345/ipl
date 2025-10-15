@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Draft Auction Simulator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styling for a dark, engaging theme */
+        :root {
+            --primary-bg: #1f2937; /* Dark Slate */
+            --secondary-bg: #374151; /* Medium Slate */
+            --accent-color: #f59e0b; /* Amber/Gold for IPL feel */
+            --text-light: #f3f4f6; /* Off-White */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+        /* Custom scrollbar for aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+        .delete-btn {
+            line-height: 1;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+        /* Style for the select dropdown arrow in dark mode */
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M7 7l3-3 3 3m0 6l-3 3-3-3' stroke='%23f59e0b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+        }
+    </style>
+    <script>
+        // Use a simple theme configuration for Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'accent': '#f59e0b',
+                        'slate-dark': '#1f2937',
+                        'slate-medium': '#374151',
+                    }
+                }
+            }
+        }
+
+        // --- IPL 2025 PLAYER DATA (Combined & Categorized) ---
+        // This data populates the searchable player name list.
+        const MOCK_PLAYER_DATA = [
+            // Original Top Players
+            { name: "Virat Kohli", category: "Batsman" },
+            { name: "Rohit Sharma", category: "Batsman" },
+            { name: "Shubman Gill", category: "Batsman" },
+            { name: "Yashasvi Jaiswal", category: "Batsman" },
+            { name: "Kane Williamson", category: "Batsman" },
+            { name: "David Warner", category: "Batsman" },
+            { name: "Rinku Singh", category: "Batsman" },
+            { name: "Jasprit Bumrah", category: "Bowler" },
+            { name: "Trent Boult", category: "Bowler" },
+            { name: "Rashid Khan", category: "Bowler" },
+            { name: "Yuzvendra Chahal", category: "Bowler" },
+            { name: "Mohammed Siraj", category: "Bowler" },
+            { name: "Hardik Pandya", category: "All-rounder" },
+            { name: "Ben Stokes", category: "All-rounder" },
+            { name: "Ravindra Jadeja", category: "All-rounder" },
+            { name: "Mitchell Marsh", category: "All-rounder" },
+            { name: "Sam Curran", category: "All-rounder" },
+            { name: "MS Dhoni", category: "Wicket Keeper" },
+            { name: "Rishabh Pant", category: "Wicket Keeper" },
+            { name: "Sanju Samson", category: "Wicket Keeper" },
+            { name: "KL Rahul", category: "Wicket Keeper" },
+            { name: "Jos Buttler", category: "Wicket Keeper" },
+            { name: "Pat Cummins", category: "Bowler" },
+            { name: "Suryakumar Yadav", category: "Batsman" },
+            { name: "Daryl Mitchell", category: "All-rounder" },
+            { name: "Faf du Plessis", category: "Batsman" },
+            { name: "Glenn Maxwell", category: "All-rounder" },
+            // Additional players from user list (Categorized and Deduplicated)
+            { name: "Ruturaj Gaikwad", category: "Batsman" },
+            { name: "Shivam Dube", category: "All-rounder" },
+            { name: "Matheesha Pathirana", category: "Bowler" },
+            { name: "Devon Conway", category: "Wicket Keeper" },
+            { name: "Rahul Tripathi", category: "Batsman" },
+            { name: "Rachin Ravindra", category: "All-rounder" },
+            { name: "R Ashwin", category: "All-rounder" },
+            { name: "Khaleel Ahmed", category: "Bowler" },
+            { name: "Noor Ahmed", category: "Bowler" },
+            { name: "Vijay Shankar", category: "All-rounder" },
+            { name: "Shaik Rasheed", category: "Batsman" },
+            { name: "Anshul Kamboj", category: "Bowler" },
+            { name: "Mukesh Choudhary", category: "Bowler" },
+            { name: "Deepak Hooda", category: "All-rounder" },
+            { name: "Gurjapneet Singh", category: "Bowler" },
+            { name: "Nathan Ellis", category: "Bowler" },
+            { name: "Jamie Overton", category: "All-rounder" },
+            { name: "Kamlesh Nagarkoti", category: "Bowler" },
+            { name: "Ramakrishna Ghosh", category: "Batsman" },
+            { name: "Shreyas Gopal", category: "Bowler" },
+            { name: "Vansh Bedi", category: "Bowler" },
+            { name: "Tilak Varma", category: "Batsman" },
+            { name: "Naman Dhir", category: "Batsman" },
+            { name: "Robin Minz", category: "Wicket Keeper" },
+            { name: "Karan Sharma", category: "All-rounder" },
+            { name: "Deepak Chahar", category: "All-rounder" },
+            { name: "Ryan Rickelton", category: "Wicket Keeper" },
+            { name: "Allah Ghazanfar", category: "Bowler" },
+            { name: "Will Jacks", category: "All-rounder" },
+            { name: "Ashwani Kumar", category: "Bowler" },
+            { name: "Mitchell Santner", category: "All-rounder" },
+            { name: "Reece Topley", category: "Bowler" },
+            { name: "KL Shrijith", category: "Wicket Keeper" },
+            { name: "Raj Angad Bawa", category: "All-rounder" },
+            { name: "Rajat Patidar", category: "Batsman" },
+            { name: "Yash Dayal", category: "Bowler" },
+            { name: "Liam Livingstone", category: "All-rounder" },
+            { name: "Phil Salt", category: "Wicket Keeper" },
+            { name: "Jitesh Sharma", category: "Wicket Keeper" },
+            { name: "Josh Hazlewood", category: "Bowler" },
+            { name: "Rasikh Dar", category: "Bowler" },
+            { name: "Suyash Sharma", category: "Bowler" },
+            { name: "Bhuvneshwar Kumar", category: "Bowler" },
+            { name: "Krunal Pandya", category: "All-rounder" },
+            { name: "Swapnil Singh", category: "All-rounder" },
+            { name: "Tim David", category: "Batsman" },
+            { name: "Romario Shepherd", category: "All-rounder" },
+            { name: "Nuwan Thushara", category: "Bowler" },
+            { name: "Varun Chakravarthy", category: "Bowler" },
+            { name: "Sunil Narine", category: "All-rounder" },
+            { name: "Andre Russell", category: "All-rounder" },
+            { name: "Harshit Rana", category: "Bowler" },
+            { name: "Ramandeep Singh", category: "All-rounder" },
+            { name: "Venkatesh Iyer", category: "All-rounder" },
+            { name: "Quinton de Kock", category: "Wicket Keeper" },
+            { name: "Rahmanullah Gurbaz", category: "Wicket Keeper" },
+            { name: "Anrich Nortje", category: "Bowler" },
+            { name: "Angkrish Raghuvanshi", category: "Batsman" },
+            { name: "Vaibhav Arora", category: "Bowler" },
+            { name: "Mayank Markande", category: "Bowler" },
+            { name: "Rovman Powell", category: "Batsman" },
+            { name: "Manish Pandey", category: "Batsman" },
+            { name: "Spencer Johnson", category: "Bowler" },
+            { name: "Riyan Parag", category: "All-rounder" },
+            { name: "Dhruv Jurel", category: "Wicket Keeper" },
+            { name: "Shimron Hetmyer", category: "Batsman" },
+            { name: "Sandeep Sharma", category: "Bowler" },
+            { name: "Jofra Archer", category: "Bowler" },
+            { name: "Maheesh Theekshana", category: "Bowler" },
+            { name: "Wanindu Hasaranga", category: "All-rounder" },
+            { name: "Akash Madhwal", category: "Bowler" },
+            { name: "Kumar Kartikeya", category: "Bowler" },
+            { name: "Tushar Deshpande", category: "Bowler" },
+            { name: "Nitish Rana", category: "Batsman" },
+            { name: "Shubham Dubey", category: "Batsman" },
+            { name: "Yudhvir Singh", category: "Bowler" },
+            { name: "Fazalhaq Farooqi", category: "Bowler" },
+            { name: "Vaibhav Suryavanshi", category: "Batsman" },
+            { name: "Shashank Singh", category: "Batsman" },
+            { name: "Prabhsimran Singh", category: "Wicket Keeper" },
+            { name: "Arshdeep Singh", category: "Bowler" },
+            { name: "Shreyas Iyer", category: "Batsman" },
+            { name: "Marcus Stoinis", category: "All-rounder" },
+            { name: "Nehal Wadhera", category: "Batsman" },
+            { name: "Harpreet Brar", category: "Bowler" },
+            { name: "Vishnu Vinod", category: "Wicket Keeper" },
+            { name: "Vyshak Vijay Kumar", category: "Bowler" },
+            { name: "Yash Thakur", category: "Bowler" },
+            { name: "Josh Inglis", category: "Wicket Keeper" },
+            { name: "Lockie Ferguson", category: "Bowler" },
+            { name: "Marco Jansen", category: "All-rounder" },
+            { name: "Azmatullah Omarzai", category: "All-rounder" },
+            { name: "Sai Kishore", category: "Bowler" },
+            { name: "Harnoor Pannu", category: "Batsman" },
+            { name: "Kuldeep Sen", category: "Bowler" },
+            { name: "Priyansh Arya", category: "Batsman" },
+            { name: "Aaron Hardie", category: "All-rounder" },
+            { name: "Musheer Khan", category: "All-rounder" },
+            { name: "Suryansh Shedge", category: "Batsman" },
+            { name: "Pyla Avinash", category: "Batsman" },
+            { name: "Axar Patel", category: "All-rounder" },
+            { name: "Kuldeep Yadav", category: "Bowler" },
+            { name: "Tristan Stubbs", category: "Wicket Keeper" },
+            { name: "Abhishek Porel", category: "Wicket Keeper" },
+            { name: "Mitchell Starc", category: "Bowler" },
+            { name: "Harry Brook", category: "Batsman" },
+            { name: "Jake Fraser-McGurk", category: "Batsman" },
+            { name: "T Natarajan", category: "Bowler" },
+            { name: "Karun Nair", category: "Batsman" },
+            { name: "Sameer Rizvi", category: "Batsman" },
+            { name: "Ashutosh Sharma", category: "Batsman" },
+            { name: "Mohit Sharma", category: "Bowler" },
+            { name: "Mukesh Kumar", category: "Bowler" },
+            { name: "Darshan Markande", category: "Bowler" },
+            { name: "Vipraj Nigam", category: "Bowler" },
+            { name: "Dushmantha Chameera", category: "Bowler" },
+            { name: "Heinrich Klaasen", category: "Wicket Keeper" },
+            { name: "Travis Head", category: "Batsman" },
+            { name: "Abhishek Sharma", category: "All-rounder" },
+            { name: "Nitish Kumar Reddy", category: "All-rounder" },
+            { name: "Mohammed Shami", category: "Bowler" },
+            { name: "Harshal Patel", category: "All-rounder" },
+            { name: "Ishan Kishan", category: "Wicket Keeper" },
+            { name: "Rahul Chahar", category: "Bowler" },
+            { name: "Adam Zampa", category: "Bowler" },
+            { name: "Atharva Taide", category: "Batsman" },
+            { name: "Abhinav Manohar", category: "Batsman" },
+            { name: "Simarjeet Singh", category: "Bowler" },
+            { name: "Zeeshan Ansari", category: "Bowler" },
+            { name: "Jaydev Unadkat", category: "Bowler" },
+            { name: "Brydon Carse", category: "Bowler" },
+            { name: "Kamindu Mendis", category: "All-rounder" },
+            { name: "Aniket Verma", category: "Bowler" },
+            { name: "Eshan Malinga", category: "Bowler" },
+            { name: "Sai Sudharsan", category: "Batsman" },
+            { name: "Rahul Tewatia", category: "All-rounder" },
+            { name: "Shahrukh Khan", category: "Batsman" },
+            { name: "Kagiso Rabada", category: "Bowler" },
+            { name: "Prasidh Krishna", category: "Bowler" },
+            { name: "Nishant Sidhu", category: "All-rounder" },
+            { name: "Mahipal Lomror", category: "All-rounder" },
+            { name: "Kumar Kushagra", category: "Wicket Keeper" },
+            { name: "Anuj Rawat", category: "Wicket Keeper" },
+            { name: "Manav Suthar", category: "Bowler" },
+            { name: "Washington Sundar", category: "All-rounder" },
+            { name: "Gerald Coetzee", category: "Bowler" },
+            { name: "Arshad Khan", category: "All-rounder" },
+            { name: "Gurnoor Brar", category: "Bowler" },
+            { name: "Sherfane Rutherford", category: "Batsman" },
+            { name: "Ishant Sharma", category: "Bowler" },
+            { name: "Jayant Yadav", category: "All-rounder" },
+            { name: "Nicholas Pooran", category: "Wicket Keeper" },
+            { name: "Ravi Bishnoi", category: "Bowler" },
+            { name: "Mayank Yadav", category: "Bowler" },
+            { name: "Ayush Badoni", category: "All-rounder" },
+            { name: "Mohsin Khan", category: "Bowler" },
+            { name: "David Miller", category: "Batsman" },
+            { name: "Aiden Markram", category: "All-rounder" },
+            { name: "Avesh Khan", category: "Bowler" },
+            { name: "Abdul Samad", category: "Batsman" },
+            { name: "Aryan Juyal", category: "Wicket Keeper" },
+            { name: "Akash Deep", category: "Bowler" },
+            { name: "Himmat Singh", category: "Batsman" },
+            { name: "M Siddharth", category: "Bowler" },
+            { name: "Digvesh Singh", category: "Bowler" },
+            { name: "Shahbaz Ahmed", category: "All-rounder" },
+            { name: "Akash Singh", category: "Bowler" },
+            { name: "Shamar Joseph", category: "Bowler" },
+            { name: "Prince Yadav", category: "All-rounder" },
+            { name: "Yuvraj Chaudhary", category: "Bowler" }
+        ];
+
+        // --- Core Application State ---
+        let totalBudget = 0;
+        let remainingBudget = 0;
+        let minBasePrice = 0;
+        let playersBought = [];
+        let playerCounter = 1;
+        let teamName = '';
+
+        // Utility function to format currency
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 2,
+            }).format(amount);
+        };
+
+        // --- DOM Elements ---
+        const budgetDisplay = () => document.getElementById('remaining-budget-display');
+        const minPriceDisplay = () => document.getElementById('min-base-price-display');
+        const playerList = () => document.getElementById('player-list');
+        const setupCard = () => document.getElementById('setup-card');
+        const auctionCard = () => document.getElementById('auction-card');
+        const buyPlayerForm = () => document.getElementById('buy-player-form');
+        const playerPriceInput = () => document.getElementById('player-price');
+        const playerNameInput = () => document.getElementById('player-name');
+        const playerCategoryInput = () => document.getElementById('player-category');
+        const teamNameDisplay = () => document.getElementById('team-name-display');
+
+        // --- Message/Modal Handling (Non-alert) ---
+        function showMessage(message, type = 'info') {
+            const messageBox = document.getElementById('message-box');
+            messageBox.textContent = message;
+
+            // Clear existing classes
+            messageBox.className = 'p-3 rounded-xl mb-4 text-center font-semibold transition duration-300';
+
+            // Apply type-specific styles
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-600', 'text-white');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-600', 'text-white');
+            } else { // info
+                messageBox.classList.add('bg-blue-600', 'text-white');
+            }
+
+            messageBox.classList.remove('hidden');
+
+            // Hide message after 5 seconds
+            clearTimeout(window.messageTimeout);
+            window.messageTimeout = setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- Player List Population ---
+        function populatePlayerList() {
+            const datalist = document.getElementById('player-options');
+            if (datalist) {
+                // Clear existing options
+                datalist.innerHTML = '';
+                // Add new options from mock data
+                MOCK_PLAYER_DATA.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.name;
+                    // Optional: set the category automatically if a player is selected from the list
+                    option.setAttribute('data-category', player.category);
+                    datalist.appendChild(option);
+                });
+            }
+        }
+        
+        // --- Core Functions ---
+
+        function initializeAuction() {
+            // Get values from setup inputs
+            const teamInput = document.getElementById('team-name').value.trim();
+            const budgetInput = document.getElementById('total-budget').value;
+            const minPriceInput = document.getElementById('min-base-price').value;
+
+            // Simple validation
+            if (!teamInput) {
+                showMessage("Please enter your Team Name.", 'error');
+                return;
+            }
+            if (!budgetInput || isNaN(budgetInput) || budgetInput <= 0) {
+                showMessage("Please enter a valid starting budget.", 'error');
+                return;
+            }
+            if (!minPriceInput || isNaN(minPriceInput) || minPriceInput < 0) {
+                showMessage("Please enter a valid minimum base price (can be 0).", 'error');
+                return;
+            }
+
+            teamName = teamInput;
+            totalBudget = parseFloat(budgetInput);
+            remainingBudget = totalBudget;
+            minBasePrice = parseFloat(minPriceInput);
+            playersBought = [];
+            playerCounter = 1;
+
+            // Update UI visibility and display
+            setupCard().classList.add('hidden');
+            auctionCard().classList.remove('hidden');
+
+            // Attempt to pre-fill category if a mock player name was selected
+            const selectedPlayer = MOCK_PLAYER_DATA.find(p => p.name === playerNameInput().value);
+            if (selectedPlayer) {
+                playerCategoryInput().value = selectedPlayer.category;
+            }
+
+            updateDisplay();
+            showMessage(`Auction for ${teamName} started! Min base price: ${formatCurrency(minBasePrice)}`, 'success');
+        }
+
+        function updateDisplay() {
+            // Update Team Name display
+            teamNameDisplay().textContent = teamName ? `for ${teamName}` : '...';
+
+            budgetDisplay().textContent = formatCurrency(remainingBudget);
+            minPriceDisplay().textContent = formatCurrency(minBasePrice);
+
+            // Update Player List
+            playerList().innerHTML = playersBought.length > 0
+                ? playersBought.map((player, index) => `
+                    <div class="flex justify-between items-center p-3 border-b border-slate-medium last:border-b-0 transition duration-150 ease-in-out hover:bg-slate-medium/50">
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-lg">${index + 1}. ${player.name}</span>
+                            <!-- Displaying Category -->
+                            <span class="text-xs text-gray-400 font-medium mt-0.5 px-2 py-0.5 rounded-full inline-block bg-accent/20 text-accent self-start">${player.category}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-accent font-bold">${formatCurrency(player.price)}</span>
+                            <!-- NEW: Delete Button -->
+                            <button onclick="deletePlayer(${index})" 
+                                class="delete-btn bg-red-600 text-white hover:bg-red-700 transition duration-150"
+                                title="Delete Player and Refund Budget">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')
+                : '<p class="text-center text-gray-400 p-4">No players drafted yet. Start buying!</p>';
+
+            // Update budget summary text color
+            const budgetContainer = budgetDisplay().closest('div');
+            // Clear all color classes first
+            budgetContainer.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400');
+            
+            if (totalBudget > 0) { // Only apply colors if budget is initialized
+                if (remainingBudget / totalBudget < 0.1) {
+                    budgetContainer.classList.add('text-red-400');
+                } else if (remainingBudget / totalBudget < 0.25) {
+                    budgetContainer.classList.add('text-yellow-400');
+                } else {
+                    budgetContainer.classList.add('text-green-400');
+                }
+            } else {
+                 budgetContainer.classList.add('text-green-400'); // Default color if not started
+            }
+
+            // Update player count display
+            document.getElementById('player-count').textContent = playersBought.length;
+        }
+        
+        // FUNCTION: Delete a player and refund budget
+        window.deletePlayer = (index) => {
+            if (index < 0 || index >= playersBought.length) {
+                showMessage("Error: Invalid player index.", 'error');
+                return;
+            }
+
+            const deletedPlayer = playersBought[index];
+            
+            // 1. Refund Budget
+            remainingBudget += deletedPlayer.price;
+
+            // 2. Remove player from array
+            playersBought.splice(index, 1);
+
+            // 3. Update UI
+            updateDisplay();
+            showMessage(`${deletedPlayer.name} (${deletedPlayer.category}) removed successfully. ${formatCurrency(deletedPlayer.price)} refunded.`, 'info');
+        }
+
+        function buyPlayer(event) {
+            event.preventDefault();
+
+            const price = parseFloat(playerPriceInput().value);
+            let name = playerNameInput().value.trim();
+            const category = playerCategoryInput().value;
+
+            if (!price || isNaN(price) || price <= 0) {
+                showMessage("Please enter a valid bid price (must be greater than 0).", 'error');
+                return;
+            }
+            
+            if (category === '') {
+                showMessage("Please select a player category (Batsman, Bowler, etc.).", 'error');
+                return;
+            }
+
+            // Validation against Min Base Price
+            if (price < minBasePrice) {
+                showMessage(`Player price (${formatCurrency(price)}) is below the minimum base price of ${formatCurrency(minBasePrice)}.`, 'error');
+                return;
+            }
+
+            if (price > remainingBudget) {
+                showMessage(`Insufficient funds! Cannot afford player at ${formatCurrency(price)}. Remaining budget: ${formatCurrency(remainingBudget)}.`, 'error');
+                return;
+            }
+
+            // Deduct funds and add player to roster
+            remainingBudget -= price;
+
+            if (!name) {
+                name = `${category} ${playerCounter}`;
+            }
+
+            playersBought.push({ name, price, category });
+            playerCounter++;
+
+            // Reset form inputs
+            playerPriceInput().value = '';
+            playerNameInput().value = '';
+            // If the player name came from the mock list, reset the category too for the next pick.
+            const selectedPlayer = MOCK_PLAYER_DATA.find(p => p.name === name);
+            if (selectedPlayer) {
+                playerCategoryInput().value = '';
+            }
+            
+            updateDisplay();
+            showMessage(`${name} (${category}) drafted successfully for ${formatCurrency(price)}!`, 'success');
+        }
+
+        function resetSimulation() {
+            totalBudget = 0;
+            remainingBudget = 0;
+            minBasePrice = 0;
+            playersBought = [];
+            playerCounter = 1;
+            teamName = '';
+
+            // Reset UI state
+            document.getElementById('team-name').value = 'My Dream Eleven';
+            document.getElementById('total-budget').value = '100000000';
+            document.getElementById('min-base-price').value = '500000';
+            
+            setupCard().classList.remove('hidden');
+            auctionCard().classList.add('hidden');
+            
+            // Clear auction specific inputs
+            playerPriceInput().value = '';
+            playerNameInput().value = '';
+            playerCategoryInput().value = '';
+            
+            updateDisplay();
+            showMessage("Simulation reset. Enter new details to start.", 'info');
+        }
+
+        // Listener to auto-fill category if a mock player name is typed/selected
+        function handlePlayerNameInput() {
+            const name = playerNameInput().value.trim();
+            const selectedPlayer = MOCK_PLAYER_DATA.find(p => p.name === name);
+            if (selectedPlayer) {
+                playerCategoryInput().value = selectedPlayer.category;
+            }
+        }
+
+        // Initialize listeners
+        window.onload = () => {
+            // Populate the datalist on load
+            populatePlayerList();
+
+            document.getElementById('start-auction-btn').addEventListener('click', initializeAuction);
+            buyPlayerForm().addEventListener('submit', buyPlayer);
+            document.getElementById('reset-btn').addEventListener('click', resetSimulation);
+            playerNameInput().addEventListener('input', handlePlayerNameInput);
+        };
+    </script>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-10 p-4 border-b-4 border-accent">
+            <h1 class="text-5xl font-extrabold text-accent tracking-tighter">
+                <span class="text-white">DRAFT</span> AUCTION SIMULATOR
+            </h1>
+            <p class="text-gray-400 mt-2 text-xl">
+                IPL Team Building Tool <span id="team-name-display" class="font-bold text-white">...</span>
+            </p>
+            <p class="text-gray-400 mt-2 text-xl">
+                DEV - UDOY SHANKER DAS
+            </p>
+        </header>
+
+        <!-- Message Box -->
+        <div id="message-box" class="hidden"></div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Column 1: Control Panel (Drafting) -->
+            <div class="lg:col-span-2 space-y-8">
+
+                <!-- Auction Setup Card (Initial State) -->
+                <div id="setup-card" class="bg-slate-medium p-6 md:p-8 rounded-2xl shadow-2xl border-b-4 border-accent">
+                    <h2 class="text-3xl font-bold mb-4 text-white">1. Setup Your Auction</h2>
+                    <p class="text-gray-300 mb-6">Define your team name, total budget, and the minimum base price required for any player.</p>
+                    
+                    <div class="space-y-4">
+                        <!-- NEW: Team Name Input -->
+                        <label for="team-name" class="block text-gray-200 font-semibold">Team Name (Required)</label>
+                        <input type="text" id="team-name" placeholder="Enter your team's name"
+                            class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white"
+                            value="My Dream Eleven">
+
+                        <!-- Total Budget Input -->
+                        <label for="total-budget" class="block text-gray-200 font-semibold pt-2">Total Budget (e.g., 100000000 for 10 Crore)</label>
+                        <input type="number" id="total-budget" placeholder="Enter Total Budget"
+                            class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white"
+                            min="1000000" value="100000000">
+
+                        <!-- Min Base Price Input -->
+                        <label for="min-base-price" class="block text-gray-200 font-semibold pt-2">Minimum Base Price Per Player</label>
+                        <input type="number" id="min-base-price" placeholder="Enter Min Base Price (e.g., 500000)"
+                            class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white"
+                            min="0" value="500000">
+
+                        <button id="start-auction-btn"
+                            class="w-full mt-6 bg-accent text-slate-dark font-bold py-3 rounded-xl transition duration-300 transform hover:scale-[1.01] shadow-lg shadow-accent/40">
+                            START AUCTION
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Auction/Draft Card (Active State) -->
+                <div id="auction-card" class="bg-slate-medium p-6 md:p-8 rounded-2xl shadow-2xl border-b-4 border-accent hidden">
+                    <div class="flex justify-between items-center mb-6">
+                           <h2 class="text-3xl font-bold text-white">2. Draft a Player</h2>
+                           <button id="reset-btn" class="text-sm text-gray-400 hover:text-red-400 transition duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.836 4.582a4.5 4.5 0 01-1.892 2.74l-4.24 4.24a1 1 0 01-1.414 0l-4.24-4.24a4.5 4.5 0 01-1.892-2.74M10 18l.243-1.464a7.994 7.994 0 01.378-1.436" />
+                                </svg>
+                                Reset
+                           </button>
+                    </div>
+                    
+                    <form id="buy-player-form" class="space-y-4">
+                        <!-- Player Name Input (Now a searchable Datalist) -->
+                        <div>
+                            <label for="player-name" class="block text-gray-200 font-semibold mb-1">Player Name (Searchable List / Optional)</label>
+                            <input type="text" id="player-name" list="player-options" placeholder="Select or type a player name (E.g., Rohit Sharma)"
+                                class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white">
+                            
+                            <!-- Datalist for searchable dropdown functionality -->
+                            <datalist id="player-options">
+                                <!-- Options populated by JavaScript -->
+                            </datalist>
+                        </div>
+
+                        <!-- Player Category Input -->
+                        <div>
+                            <label for="player-category" class="block text-gray-200 font-semibold mb-1">Player Category (Required)</label>
+                            <select id="player-category" required
+                                class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white appearance-none pr-8">
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Batsman">Batsman</option>
+                                <option value="Bowler">Bowler</option>
+                                <option value="All-rounder">All-rounder</option>
+                                <option value="Wicket Keeper">Wicket Keeper</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Player Price Input -->
+                        <div>
+                            <label for="player-price" class="block text-gray-200 font-semibold mb-1">Player Price (min base price: <span id="min-base-price-display" class="text-accent font-bold">...</span>)</label>
+                            <input type="number" id="player-price" placeholder="Enter final bid price"
+                                class="w-full p-3 rounded-lg bg-slate-dark border border-gray-600 focus:ring-accent focus:border-accent text-white"
+                                min="0">
+                        </div>
+
+                        <button type="submit"
+                            class="w-full mt-4 bg-blue-600 text-white font-bold py-3 rounded-xl transition duration-300 transform hover:bg-blue-700 shadow-md shadow-blue-500/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l3 12h11l3-12h-17zm11 15a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
+                            </svg>
+                            BUY PLAYER
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Column 2: Summary and Roster -->
+            <div class="lg:col-span-1 space-y-8">
+                
+                <!-- Budget Summary Card -->
+                <div class="bg-slate-medium p-6 rounded-2xl shadow-2xl border-b-4 border-white">
+                    <h3 class="text-2xl font-bold mb-4 border-b border-gray-600 pb-2 text-white">BUDGET SUMMARY</h3>
+                    <div class="flex flex-col items-center">
+                        <p class="text-xl text-gray-300 mb-2">Remaining Funds:</p>
+                        <div class="text-5xl font-extrabold text-green-400" id="remaining-budget-display">
+                            --
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roster List Card -->
+                <div class="bg-slate-medium p-6 rounded-2xl shadow-2xl border-b-4 border-accent">
+                    <h3 class="text-2xl font-bold mb-4 border-b border-gray-600 pb-2 text-white flex justify-between items-center">
+                        DRAFTED PLAYERS
+                        <span class="text-sm font-normal text-gray-400">Total: <span id="player-count">0</span></span>
+                    </h3>
+                    
+                    <div id="player-list" class="max-h-96 overflow-y-auto">
+                        <p class="text-center text-gray-400 p-4">No players drafted yet. Start buying!</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
