@@ -555,9 +555,60 @@
             <p class="text-gray-400 mt-2 text-xl">
                 IPL Team Building Tool <span id="team-name-display" class="font-bold text-white">...</span>
             </p>
-            <p class="text-gray-400 mt-2 text-xl">
-                DEV - UDOY SHANKER DAS
-            </p>
+            <header class="text-center mb-10 p-4 border-b-4 border-accent">
+  <h1 class="text-5xl font-extrabold text-accent tracking-tighter">
+    <span class="text-white">DRAFT</span> AUCTION SIMULATOR
+  </h1>
+  <p class="text-gray-400 mt-2 text-xl">
+    IPL Team Building Tool <span id="team-name-display" class="font-bold text-white">...</span>
+  </p>
+
+  <!-- ✨ Animated Developer Credit -->
+  <div class="mt-2 text-xl font-mono text-gray-400 flex justify-center items-center">
+    <span id="dev-text"></span><span class="dev-caret ml-1"></span>
+  </div>
+</header>
+
+<!-- Animation CSS -->
+<style>
+  /* Typewriter animation */
+  .dev-caret {
+    width: 2px;
+    height: 1.2em;
+    background-color: #f59e0b;
+    display: inline-block;
+    animation: blink 0.8s steps(1) infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  @keyframes type {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+</style>
+
+<!-- Animation Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const devText = document.getElementById("dev-text");
+    const text = "DEV - UDOY SHANKER DAS";
+    let index = 0;
+
+    function typeWriter() {
+      if (index < text.length) {
+        devText.textContent += text.charAt(index);
+        index++;
+        setTimeout(typeWriter, 90);
+      }
+    }
+
+    typeWriter();
+  });
+</script>
+
         </header>
 
         <!-- Message Box -->
@@ -690,3 +741,4 @@
 
 </body>
 </html>
+
